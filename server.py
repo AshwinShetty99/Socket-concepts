@@ -1,66 +1,33 @@
 import socket
-import select1
+import sys
+import time
 
-HEADER_LENGTH = 10
-IP = "127.0.0.1"
-PORT = 1234
+## end of imports ###
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-
-server_socket.bind((IP , PORT))
-server_socket.listen()
-
-sockets_list = [server_socket]
-
-clients = {}
-
-def receive_message(client_socket):
-    try:
-        message_header = client_socket.recv(HEADER_LENGTH)
-
-        if not len(message_header):
-            return False
-
-        message_length = int(message_header.decode("utf-8").strip())
-        return{"header":message_header, "data": client_socket.recv(message_length)}
+### init ###
 
 
-    except:
-        return False
-
-while True:
-    read_socket,_,exception_sockets =  select.select(sockets_list,[],sockets_list)
-
-    for notified_socket in read_socket:
-        if notified_socket == server_socket:
-            client_socket , client_address= server_socket.accept()
-
-            user = receive_message(client_socket)
-            if user is False:
-                continue
-
-            sockets_list.append(client_socket)
-
-            clients[client_socket] = user
-
-            print(f"Accepted New connection from {client_address[0]}:{client_address[1]} username:{user['data'].decode('utf-8')}")
-        else:
-            message = receive_message(notified_socket)
-
-            if message is False:
-                print(f"Closed connecion from {clients[notified_socket]['data'].decode('utf-8')}")
-                sockets_list.remove(notified_socket)
-                del clients[notified_socket]
-                continue
-
-            user = clients[notified_socket]
-            print(f"Received message from {user['data'].decode('utf-8')}:{message['data'].decode('utf-8')}")
-
-            for client_socket in clients:
-                if client_socket != notified_socket:
-                    client_socket.send(user['header'] + user ['data'] + message['header'] + message['data'])
-
-    for notified_socket in exception_sockets:
-        sockets_list.remove(notified_socket)
-        del clients[notified_socket]
+s = socket.socket()
+host = socket.gethostname()
+print(" server will start on host : ", host)
+port = 8080
+s.bind((host,port))
+print("")
+print(" Server done binding to host and port successfully")
+print("")
+print("Server is waiting for incoming connections")
+print("")
+s.listen(1)
+conn, addr = s.accept()
+print(addr, " Has connected to the server and is now online ...")
+print("")
+while 1:
+            message = input(str(">> "))
+            message = message.encode()
+            conn.send(message)
+            print("message has been sent...")
+            print("")
+            incoming_message = conn.recv(1024)
+            incoming_message = incoming_message.decode()
+            print(" Client : ", incoming_message)
+            print("")
